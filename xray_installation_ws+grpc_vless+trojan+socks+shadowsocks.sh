@@ -385,27 +385,37 @@ echo '
     }
   ],
   "routing": {
+    "domainStrategy": "IPIfNonMatch",
     "rules": [
       {
-        "type": "field",
-        "protocol": [
-          "bittorrent"
+        "domain": [
+            "geosite:cn"
         ],
-        "outboundTag": "blocked"
+        "outboundTag": "blocked",
+        "type": "field"
+      },      
+      {
+          "ip": [
+              "geoip:cn"
+          ],
+          "outboundTag": "blocked",
+          "type": "field"
       }
     ]
-  },
-  "outbounds": [
-    {
-      "protocol": "freedom",
-      "settings": {}
-    },
-    {
-      "tag": "blocked",
-      "protocol": "blackhole",
-      "settings": {}
+  },  
+  "routing": {
+    "strategy": "rules",
+    "settings": {
+      "decryption":"none",
+      "rules": [
+        {
+          "type": "field",
+          "ip": [ "geoip:private" ],
+          "outboundTag": "blocked"
+        }
+      ]
     }
-  ]
+  }
 }
 ' > /usr/local/etc/xray/config.json
 
