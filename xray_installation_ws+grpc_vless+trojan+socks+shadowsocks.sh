@@ -369,53 +369,11 @@ echo '
 		}
 	}	
   ],
-  "outbound": {
-    "protocol": "freedom",
-    "settings": {
-      "decryption":"none"
-    }
-  },
-  "outboundDetour": [
-    {
-      "protocol": "blackhole",
-      "settings": {
-        "decryption":"none"
-      },
-      "tag": "blocked"
-    }
-  ],
-  "routing": {
-    "domainStrategy": "IPIfNonMatch",
-    "rules": [
-      {
-        "domain": [
-            "geosite:cn"
-        ],
-        "outboundTag": "blocked",
-        "type": "field"
-      },      
-      {
-          "ip": [
-              "geoip:cn"
-          ],
-          "outboundTag": "blocked",
-          "type": "field"
-      }
-    ]
-  },  
-  "routing": {
-    "strategy": "rules",
-    "settings": {
-      "decryption":"none",
-      "rules": [
+    "outbounds": [
         {
-          "type": "field",
-          "ip": [ "geoip:private" ],
-          "outboundTag": "blocked"
+            "protocol": "freedom"
         }
-      ]
-    }
-  }
+    ]
 }
 ' > /usr/local/etc/xray/config.json
 
