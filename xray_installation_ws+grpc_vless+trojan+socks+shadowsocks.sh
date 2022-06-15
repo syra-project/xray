@@ -46,6 +46,7 @@ shadowsocks_passwd="syra"
 
 # 5. Gunakan WS untuk mengonfigurasi protokol vless, trojan, socks, shadowsocks 48 
 # Secara acak menghasilkan jalur ws yang perlu digunakan vless, trojan, socks, shadowsocks
+vmess_ws_path="/syra/`pwgen -csn 6 1 | xargs |sed 's/ /\//g'`"
 vless_ws_path="/syra/`pwgen -csn 6 1 | xargs |sed 's/ /\//g'`"
 trojan_ws_path="/syra/`pwgen -csn 6 1 | xargs |sed 's/ /\//g'`"
 socks_ws_path="/syra/`pwgen -csn 6 1 | xargs |sed 's/ /\//g'`"
@@ -53,6 +54,7 @@ shadowsocks_ws_path="/syra/`pwgen -csn 6 1 | xargs |sed 's/ /\//g'`"
 
 # 6. Gunakan gRPC untuk mengonfigurasi protokol vless, trojan, socks, shadowsocks 55 
 # Secara acak menghasilkan jalur grpc yang perlu digunakan vless, trojan, socks, shadowsocks
+vmess_grpc_path="$(pwgen -1scn 12)$(pwgen -1scny -r "\!@#$%^&*()-+={}[]|:\";',/?><\`~" 36)"
 vless_grpc_path="$(pwgen -1scn 12)$(pwgen -1scny -r "\!@#$%^&*()-+={}[]|:\";',/?><\`~" 36)"
 trojan_grpc_path="$(pwgen -1scn 12)$(pwgen -1scny -r "\!@#$%^&*()-+={}[]|:\";',/?><\`~" 36)"
 socks_grpc_path="$(pwgen -1scn 12)$(pwgen -1scny -r "\!@#$%^&*()-+={}[]|:\";',/?><\`~" 36)"
@@ -63,6 +65,7 @@ domainSock_dir="/run/xray";! [ -d $domainSock_dir ] && mkdir -pv $domainSock_dir
 chown www-data.www-data $domainSock_dir
 
 #8. Tentukan nama file domainSock yang perlu digunakan
+vmess_ws_domainSock="${domainSock_dir}/vmess_ws.sock"
 vless_ws_domainSock="${domainSock_dir}/vless_ws.sock"
 trojan_ws_domainSock="${domainSock_dir}/trojan_ws.sock"
 vless_grpc_domainSock="${domainSock_dir}/vless_grpc.sock"
@@ -113,15 +116,26 @@ server {
 	root /usr/share/nginx/html;
   
 	# ------------------- WS -------------------
+	location = "$vmess_ws_path" {
+		proxy_redirect off;
+		proxy_pass http://unix:/run/xray/"${vmess_ws_domainSock}";
+		proxy_http_version 1.1;
+		proxy_set_header Upgrade "$http_upgrade";
+		proxy_set_header Connection 'upgrade';
+    	proxy_set_header Host "$host";
+    	proxy_set_header X-Real-IP "$remote_addr";
+    	proxy_set_header X-Forwarded-For "$proxy_add_x_forwarded_for";		
+	}
+
 	location = "$vless_ws_path" {
 		proxy_redirect off;
 		proxy_pass http://unix:"${vless_ws_domainSock}";
 		proxy_http_version 1.1;
 		proxy_set_header Upgrade "'"$http_upgrade"'";
 		proxy_set_header Connection '"'upgrade'"';
-    proxy_set_header Host "'"$host"'";
-    proxy_set_header X-Real-IP "'"$remote_addr"'";
-    proxy_set_header X-Forwarded-For "'"$proxy_add_x_forwarded_for"'";		
+    	proxy_set_header Host "'"$host"'";
+    	proxy_set_header X-Real-IP "'"$remote_addr"'";
+    	proxy_set_header X-Forwarded-For "'"$proxy_add_x_forwarded_for"'";		
 	}	
 	
 	location = "$trojan_ws_path" {
@@ -159,6 +173,14 @@ server {
 	# ------------------- WS -------------------
 	
 	# ------------------ gRPC ------------------
+	location ^~ "/$vmess_grpc_path" {
+		proxy_redirect off;
+	  grpc_set_header Host "$host";
+	  grpc_set_header X-Real-IP "$remote_addr";
+	  grpc_set_header X-Forwarded-For "$proxy_add_x_forwarded_for";
+		grpc_pass grpc://unix:"${vmess_grpc_domainSock}";		
+	}	
+	
 	location ^~ "/$vless_grpc_path" {
 		proxy_redirect off;
 	  grpc_set_header Host "'"$host"'";
@@ -204,6 +226,25 @@ echo '
     "loglevel": "warning"
   },
   "inbounds": [
+	{
+		"listen": '"\"${vmess_ws_domainSock}\""',
+		"protocol": "vmess",
+		"settings": {
+			"decryption":"none",
+			"clients": [
+				{
+          "id": '"\"$uuid\""',
+          "level": 1
+				}
+			]
+		},
+		"streamSettings":{
+			"network": "ws",
+			"wsSettings": {
+				"path": '"\"$vmess_ws_path\""'
+			}
+		}
+	},	
 	{
 		"listen": '"\"${vless_ws_domainSock}\""',
 		"protocol": "vless",
@@ -286,6 +327,18 @@ echo '
 			}
 		}
 	},	
+	{
+		"listen": '"\"${vmess_grpc_domainSock}\""',
+		"protocol": "vmess",
+		"settings": {
+			"decryption":"none",
+			"clients": [
+				{
+				"id": '"\"$uuid\""',
+				"level": 0
+				}
+			]
+		},
   	{
 		"listen": '"\"${vless_grpc_domainSock}\""',
 		"protocol": "vless",
@@ -377,12 +430,12 @@ echo '
 }
 ' > /usr/local/etc/xray/config.json
 
-#perbesar hash bucket size ke 64 
+# perbesar hash bucket size ke 64 
 sed -i 's/# server_names_hash_bucket_size 64;/server_names_hash_bucket_size 64;/g' /etc/nginx/nginx.conf
 
 # restart xray dan nginx
 systemctl restart xray
-systemctl status xray
+#systemctl status xray
 /usr/sbin/nginx -t && systemctl restart nginx
 
 
@@ -393,6 +446,10 @@ echo "
 nama domain	: $domainName
 Port		: 443
 ------------- WS ------------
+-----------0. vless+ws -----------
+Protokol	: vmess
+UUID		: $uuid
+Path		: $vmess_ws_path
 -----------1. vless+ws -----------
 Protokol	: vless
 UUID		: $uuid
@@ -413,20 +470,24 @@ Enkripsi	：AES-128-GCM
 Path		: $shadowsocks_ws_path
 
 ------------ gRPC -----------
-------------5. vless+grpc -----------
+------------5. vmess+grpc -----------
+Protokol	: vmess
+UUID		: $uuid
+Path		: $vmess_grpc_path
+------------6. vless+grpc -----------
 Protokol	: vless
 UUID		: $uuid
 Path		: $vless_grpc_path
------------6. trojan+grpc -----------
+-----------7. trojan+grpc -----------
 Protokol	: trojan
 Pass		: $trojan_passwd
 Path		: $trojan_grpc_path
------------7. socks+grpc ------------
+-----------8. socks+grpc ------------
 Protokol	: socks
 User  		：$socks_user
 Pass		: $socks_passwd
 Path		: $socks_grpc_path
---------8. shadowsocks+grpc ---------
+--------9. shadowsocks+grpc ---------
 Protokol	: shadowsocks
 Pass		: $shadowsocks_passwd
 Enkripsi	：AES-128-GCM
