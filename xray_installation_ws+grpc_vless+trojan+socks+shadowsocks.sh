@@ -118,14 +118,14 @@ server {
 	# ------------------- WS -------------------
 	location = "$vmess_ws_path" {
 		proxy_redirect off;
-		proxy_pass http://unix:/run/xray/"${vmess_ws_domainSock}";
+		proxy_pass http://unix:"${vmess_ws_domainSock}";
 		proxy_http_version 1.1;
-		proxy_set_header Upgrade "$http_upgrade";
-		proxy_set_header Connection 'upgrade';
-    	proxy_set_header Host "$host";
-    	proxy_set_header X-Real-IP "$remote_addr";
-    	proxy_set_header X-Forwarded-For "$proxy_add_x_forwarded_for";		
-	}
+		proxy_set_header Upgrade "'"$http_upgrade"'";
+		proxy_set_header Connection '"'upgrade'"';
+    	proxy_set_header Host "'"$host"'";
+    	proxy_set_header X-Real-IP "'"$remote_addr"'";
+    	proxy_set_header X-Forwarded-For "'"$proxy_add_x_forwarded_for"'";		
+	}	
 
 	location = "$vless_ws_path" {
 		proxy_redirect off;
@@ -175,12 +175,11 @@ server {
 	# ------------------ gRPC ------------------
 	location ^~ "/$vmess_grpc_path" {
 		proxy_redirect off;
-	  grpc_set_header Host "$host";
-	  grpc_set_header X-Real-IP "$remote_addr";
-	  grpc_set_header X-Forwarded-For "$proxy_add_x_forwarded_for";
-		grpc_pass grpc://unix:"${vmess_grpc_domainSock}";		
-	}	
-	
+	  grpc_set_header Host "'"$host"'";
+	  grpc_set_header X-Real-IP "'"$remote_addr"'";
+	  grpc_set_header X-Forwarded-For "'"$proxy_add_x_forwarded_for"'";
+		grpc_pass grpc://unix:"${vmess_grpc_domainSock}";			
+
 	location ^~ "/$vless_grpc_path" {
 		proxy_redirect off;
 	  grpc_set_header Host "'"$host"'";
@@ -431,7 +430,7 @@ echo '
 ' > /usr/local/etc/xray/config.json
 
 # perbesar hash bucket size ke 64 
-sed -i 's/# server_names_hash_bucket_size 64;/server_names_hash_bucket_size 64;/g' /etc/nginx/nginx.conf
+# sed -i 's/# server_names_hash_bucket_size 64;/server_names_hash_bucket_size 64;/g' /etc/nginx/nginx.conf
 
 # restart xray dan nginx
 systemctl restart xray
