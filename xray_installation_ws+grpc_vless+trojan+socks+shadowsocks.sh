@@ -65,7 +65,7 @@ domainSock_dir="/run/xray";! [ -d $domainSock_dir ] && mkdir -pv $domainSock_dir
 chown www-data.www-data $domainSock_dir
 
 #8. Tentukan nama file domainSock yang perlu digunakan
-vmess_ws_domainSock="${domainSock_dir}/vmess_ws.sock"
+vmess_ws_domainSock="/run/xray/vmess_grpc.sock;"
 vless_ws_domainSock="${domainSock_dir}/vless_ws.sock"
 trojan_ws_domainSock="${domainSock_dir}/trojan_ws.sock"
 vless_grpc_domainSock="${domainSock_dir}/vless_grpc.sock"
