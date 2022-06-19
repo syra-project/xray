@@ -6,7 +6,7 @@
 # Plat: ubuntu 18.04+
 # Eg  : bash v2ray_installation_ws+grpc_vless+trojan+socks+shadowsocks.sh "nama domain Anda"
 
-if [ -z "id.syra.co.id" ];then
+if [ -z "4.bebas.syra.co.id" ];then
 	echo "Nama domain tidak boleh kosong"
 	exit
 fi
@@ -27,7 +27,7 @@ ufw disable
 # "nama domain, uuid, jalur ws dan grpc, direktori domainSock, direktori sertifikat ssl"
 
 # 1. Tetapkan nama domain Anda yang telah diselesaikan
-domainName="id.syra.co.id"
+domainName="4.bebas.syra.co.id"
 
 # 2. Secara acak menghasilkan uuid
 uuid="`uuidgen`"
@@ -46,7 +46,7 @@ shadowsocks_passwd="syra"
 
 # 5. Gunakan WS untuk mengonfigurasi protokol vless, trojan, socks, shadowsocks 48 
 # Secara acak menghasilkan jalur ws yang perlu digunakan vless, trojan, socks, shadowsocks
-vmess_ws_path="/syra/vmess_ws"
+
 vless_ws_path="/syra/vless_ws"
 trojan_ws_path="/syra/trojan_ws"
 socks_ws_path="/syra/socks_ws"
@@ -54,7 +54,7 @@ shadowsocks_ws_path="/syra/ss_ws"
 
 # 6. Gunakan gRPC untuk mengonfigurasi protokol vless, trojan, socks, shadowsocks 55 
 # Secara acak menghasilkan jalur grpc yang perlu digunakan vless, trojan, socks, shadowsocks
-vmess_grpc_path="vmess_grpc"
+
 vless_grpc_path="vless_grpc"
 trojan_grpc_path="trojan_grpc"
 socks_grpc_path="socks_grpc"
@@ -65,10 +65,10 @@ domainSock_dir="/run/xray";! [ -d $domainSock_dir ] && mkdir -pv $domainSock_dir
 chown www-data.www-data $domainSock_dir
 
 #8. Tentukan nama file domainSock yang perlu digunakan
-vmess_ws_domainSock="${domainSock_dir}/vmess_ws.sock"
+
 vless_ws_domainSock="${domainSock_dir}/vless_ws.sock"
 trojan_ws_domainSock="${domainSock_dir}/trojan_ws.sock"
-vmess_grpc_domainSock="${domainSock_dir}/vmess_grpc.sock"
+
 vless_grpc_domainSock="${domainSock_dir}/vless_grpc.sock"
 trojan_grpc_domainSock="${domainSock_dir}/trojan_grpc.sock"
 
@@ -117,16 +117,6 @@ server {
 	root /usr/share/nginx/html;
   
 	# ------------------- WS -------------------
-	location = "$vmess_ws_path" {
-		proxy_redirect off;
-		proxy_pass http://unix:"${vmess_ws_domainSock}";
-		proxy_http_version 1.1;
-		proxy_set_header Upgrade "'"$http_upgrade"'";
-		proxy_set_header Connection '"'upgrade'"';
-    	proxy_set_header Host "'"$host"'";
-    	proxy_set_header X-Real-IP "'"$remote_addr"'";
-    	proxy_set_header X-Forwarded-For "'"$proxy_add_x_forwarded_for"'";		
-	}	
 
 	location = "$vless_ws_path" {
 		proxy_redirect off;
@@ -174,12 +164,7 @@ server {
 	# ------------------- WS -------------------
 	
 	# ------------------ gRPC ------------------
-	location ^~ "/$vmess_grpc_path" {
-		proxy_redirect off;
-	  grpc_set_header Host "'"$host"'";
-	  grpc_set_header X-Real-IP "'"$remote_addr"'";
-	  grpc_set_header X-Forwarded-For "'"$proxy_add_x_forwarded_for"'";
-		grpc_pass grpc://unix:"${vmess_grpc_domainSock}";			
+
 
 	location ^~ "/$vless_grpc_path" {
 		proxy_redirect off;
@@ -226,25 +211,6 @@ echo '
     "loglevel": "warning"
   },
   "inbounds": [
-	{
-		"listen": '"\"${vmess_ws_domainSock}\""',
-		"protocol": "vmess",
-		"settings": {
-			"decryption":"none",
-			"clients": [
-				{
-          "id": '"\"$uuid\""',
-          "level": 1
-				}
-			]
-		},
-		"streamSettings":{
-			"network": "ws",
-			"wsSettings": {
-				"path": '"\"$vmess_ws_path\""'
-			}
-		}
-	},	
 	{
 		"listen": '"\"${vless_ws_domainSock}\""',
 		"protocol": "vless",
@@ -327,25 +293,6 @@ echo '
 			}
 		}
 	},	
-  	{
-		"listen": '"\"${vmess_grpc_domainSock}\""',
-		"protocol": "vmess",
-		"settings": {
-			"decryption":"none",
-			"clients": [
-				{
-				"id": '"\"$uuid\""',
-				"level": 0
-				}
-			]
-		},
-		"streamSettings":{
-			"network": "grpc",
-			"grpcSettings": {
-				"serviceName": '"\"$vmess_grpc_path\""'
-			}
-		}
-	},
   	{
 		"listen": '"\"${vless_grpc_domainSock}\""',
 		"protocol": "vless",
@@ -453,10 +400,6 @@ echo "
 nama domain	: $domainName
 Port		: 443
 ------------- WS ------------
------------0. vless+ws -----------
-Protokol	: vmess
-UUID		: $uuid
-Path		: $vmess_ws_path
 -----------1. vless+ws -----------
 Protokol	: vless
 UUID		: $uuid
@@ -477,24 +420,20 @@ Enkripsi	：AES-128-GCM
 Path		: $shadowsocks_ws_path
 
 ------------ gRPC -----------
-------------5. vmess+grpc -----------
-Protokol	: vmess
-UUID		: $uuid
-Path		: $vmess_grpc_path
-------------6. vless+grpc -----------
+------------5. vless+grpc -----------
 Protokol	: vless
 UUID		: $uuid
 Path		: $vless_grpc_path
------------7. trojan+grpc -----------
+-----------6. trojan+grpc -----------
 Protokol	: trojan
 Pass		: $trojan_passwd
 Path		: $trojan_grpc_path
------------8. socks+grpc ------------
+-----------7. socks+grpc ------------
 Protokol	: socks
 User  		：$socks_user
 Pass		: $socks_passwd
 Path		: $socks_grpc_path
---------9. shadowsocks+grpc ---------
+--------8. shadowsocks+grpc ---------
 Protokol	: shadowsocks
 Pass		: $shadowsocks_passwd
 Enkripsi	：AES-128-GCM
