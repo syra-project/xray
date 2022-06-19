@@ -327,7 +327,7 @@ echo '
 			}
 		}
 	},	
-	{
+  	{
 		"listen": '"\"${vmess_grpc_domainSock}\""',
 		"protocol": "vmess",
 		"settings": {
@@ -339,6 +339,13 @@ echo '
 				}
 			]
 		},
+		"streamSettings":{
+			"network": "grpc",
+			"grpcSettings": {
+				"serviceName": '"\"$vmess_grpc_path\""'
+			}
+		}
+	},
   	{
 		"listen": '"\"${vless_grpc_domainSock}\""',
 		"protocol": "vless",
